@@ -4,3 +4,4 @@ venv/
 flask_session/
 uploads/
 *.pyc
+database.sqlite
