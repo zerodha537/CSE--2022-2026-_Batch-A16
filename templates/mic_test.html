@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}Microphone Test{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-xl shadow-lg p-8">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">
+            <i class="fas fa-microphone-alt mr-2 text-blue-600"></i> Microphone Test
+        </h2>
+        
+        <div class="mb-8">
+            <p class="text-gray-600 mb-4">
+                Before starting the interview, let's test your microphone and speech recognition.
+            </p>
+            
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6">
+                <p class="font-bold text-yellow-700">Browser Compatibility:</p>
+                <ul class="list-disc pl-5 text-yellow-600 mt-2">
+                    <li>Best supported in <strong>Google Chrome</strong></li>
+                    <li>Also works in <strong>Microsoft Edge</strong> and <strong>Safari</strong></li>
+                    <li>Firefox requires manual enablement of Web Speech API</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Microphone Test -->
+        <div class="bg-gray-50 rounded-xl p-6 mb-8">
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+                <i class="fas fa-microphone mr-2 text-green-600"></i> Step 1: Test Microphone
+            </h3>
+            
+            <div class="mb-4">
+                <button id="test-mic-btn" 
+                        class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 mb-4">
+                    <i class="fas fa-play mr-2"></i> Test Microphone
+                </button>
+                
+                <div id="mic-visualizer" class="h-4 bg-gray-200 rounded-full overflow-hidden hidden">
+                    <div id="mic-level" class="h-full bg-green-500 transition-all duration-100"></div>
+                </div>
+                
+                <p id="mic-status" class="text-gray-600 mt-2">Click the button and speak to test your microphone.</p>
+            </div>
+        </div>
+        
+        <!-- Speech Recognition Test -->
+        <div class="bg-gray-50 rounded-xl p-6 mb-8">
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+                <i class="fas fa-comment-dots mr-2 text-blue-600"></i> Step 2: Test Speech Recognition
+            </h3>
+            
+            <div class="mb-4">
+                <button id="test-speech-btn" 
+                        class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 mb-4">
+                    <i class="fas fa-microphone mr-2"></i> Start Speaking
+                </button>
+                
+                <div id="speech-test-result" class="p-4 bg-white border rounded-lg min-h-[100px] mb-4">
+                    <p class="text-gray-500 italic">Your speech will appear here...</p>
+                </div>
+                
+                <div id="speech-status" class="flex items-center mb-2">
+                    <div class="h-3 w-3 rounded-full bg-red-500 mr-2"></div>
+                    <span class="text-sm text-gray-600">Speech recognition: Off</span>
+                </div>
+            </div>
+            
+            <div class="text-sm text-gray-500">
+                <p><i class="fas fa-info-circle mr-1"></i> Speak clearly and at a normal pace.</p>
+                <p><i class="fas fa-info-circle mr-1"></i> Try saying: "Hello, this is a test of my microphone."</p>
+            </div>
+        </div>
+        
+        <!-- Troubleshooting -->
+        <div class="bg-red-50 border-l-4 border-red-500 p-6 mb-8">
+            <h3 class="text-xl font-bold mb-4 flex items-center text-red-700">
+                <i class="fas fa-exclamation-triangle mr-2"></i> Troubleshooting
+            </h3>
+            
+            <div class="space-y-3">
+                <div class="flex items-start">
+                    <i class="fas fa-question-circle text-red-600 mt-1 mr-3"></i>
+                    <div>
+                        <p class="font-semibold">No microphone detected?</p>
+                        <p class="text-red-600">Check if your microphone is properly connected and selected as the default input device.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <i class="fas fa-question-circle text-red-600 mt-1 mr-3"></i>
+                    <div>
+                        <p class="font-semibold">Permission denied?</p>
+                        <p class="text-red-600">Click the lock icon in your browser's address bar and allow microphone access.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <i class="fas fa-question-circle text-red-600 mt-1 mr-3"></i>
+                    <div>
+                        <p class="font-semibold">Speech not recognized?</p>
+                        <p class="text-red-600">Try using Chrome browser. Ensure you're in a quiet environment and speaking clearly.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="flex justify-between pt-6">
+            <a href="{{ url_for('setup_interview') }}" 
+               class="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Setup
+            </a>
+            <a href="{{ url_for('start_interview') }}" 
+               class="px-6 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg hover:opacity-90 font-semibold">
+                <i class="fas fa-check mr-2"></i> Start Interview
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const testMicBtn = document.getElementById('test-mic-btn');
+    const micVisualizer = document.getElementById('mic-visualizer');
+    const micLevel = document.getElementById('mic-level');
+    const micStatus = document.getElementById('mic-status');
+    const testSpeechBtn = document.getElementById('test-speech-btn');
+    const speechResult = document.getElementById('speech-test-result');
+    const speechStatus = document.getElementById('speech-status');
+    
+    let audioContext = null;
+    let analyser = null;
+    let microphone = null;
+    let recognition = null;
+    let isListening = false;
+    
+    // Test microphone with audio visualization
+    testMicBtn.addEventListener('click', async function() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: true,
+                video: false 
+            });
+            
+            // Setup audio visualization
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                microphone = audioContext.createMediaStreamSource(stream);
+                
+                microphone.connect(analyser);
+                analyser.fftSize = 256;
+                
+                micVisualizer.classList.remove('hidden');
+                micStatus.textContent = 'Microphone working! Speak and watch the visualization.';
+                testMicBtn.innerHTML = '<i class="fas fa-stop mr-2"></i> Stop Test';
+                testMicBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                testMicBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+                
+                // Update visualization
+                function updateVisualization() {
+                    if (!analyser) return;
+                    
+                    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                    analyser.getByteFrequencyData(dataArray);
+                    
+                    // Calculate average volume
+                    let sum = 0;
+                    for (let i = 0; i < dataArray.length; i++) {
+                        sum += dataArray[i];
+                    }
+                    const average = sum / dataArray.length;
+                    
+                    // Update visualizer width (0-100%)
+                    const width = Math.min(average / 2, 100);
+                    micLevel.style.width = `${width}%`;
+                    
+                    // Change color based on volume
+                    if (width > 70) {
+                        micLevel.style.backgroundColor = '#ef4444'; // red
+                    } else if (width > 30) {
+                        micLevel.style.backgroundColor = '#f59e0b'; // yellow
+                    } else {
+                        micLevel.style.backgroundColor = '#10b981'; // green
+                    }
+                    
+                    requestAnimationFrame(updateVisualization);
+                }
+                
+                updateVisualization();
+                
+                // Change button to stop
+                testMicBtn.onclick = stopMicTest;
+                
+            }
+            
+        } catch (error) {
+            console.error('Microphone test error:', error);
+            micStatus.textContent = 'Error: ' + error.message;
+            micStatus.className = 'text-red-600 mt-2';
+        }
+    });
+    
+    function stopMicTest() {
+        if (audioContext) {
+            audioContext.close();
+            audioContext = null;
+            analyser = null;
+            microphone = null;
+        }
+        
+        micVisualizer.classList.add('hidden');
+        micStatus.textContent = 'Microphone test stopped.';
+        testMicBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Test Microphone';
+        testMicBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+        testMicBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+        testMicBtn.onclick = testMicBtn.click.bind(testMicBtn);
+    }
+    
+    // Test speech recognition
+    testSpeechBtn.addEventListener('click', function() {
+        if (isListening) {
+            stopSpeechTest();
+        } else {
+            startSpeechTest();
+        }
+    });
+    
+    function startSpeechTest() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (!SpeechRecognition) {
+            alert('Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
+            return;
+        }
+        
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        
+        recognition.onstart = function() {
+            isListening = true;
+            updateSpeechUI();
+            speechResult.innerHTML = '<p class="text-blue-600">Listening... Speak now!</p>';
+        };
+        
+        recognition.onresult = function(event) {
+            let finalTranscript = '';
+            let interimTranscript = '';
+            
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+            
+            let displayText = finalTranscript;
+            if (interimTranscript) {
+                displayText += '<span class="text-gray-400">' + interimTranscript + '</span>';
+            }
+            
+            if (displayText) {
+                speechResult.innerHTML = '<p>' + displayText + '</p>';
+            }
+        };
+        
+        recognition.onerror = function(event) {
+            console.error('Speech recognition error:', event.error);
+            speechResult.innerHTML = '<p class="text-red-600">Error: ' + event.error + '</p>';
+            stopSpeechTest();
+        };
+        
+        recognition.onend = function() {
+            isListening = false;
+            updateSpeechUI();
+        };
+        
+        try {
+            recognition.start();
+        } catch (error) {
+            alert('Failed to start speech recognition: ' + error.message);
+        }
+    }
+    
+    function stopSpeechTest() {
+        if (recognition) {
+            recognition.stop();
+            recognition = null;
+        }
+        isListening = false;
+        updateSpeechUI();
+    }
+    
+    function updateSpeechUI() {
+        const statusIndicator = speechStatus.querySelector('.h-3');
+        const statusText = speechStatus.querySelector('span:last-child');
+        
+        if (isListening) {
+            testSpeechBtn.innerHTML = '<i class="fas fa-stop mr-2"></i> Stop';
+            testSpeechBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            testSpeechBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+            
+            statusIndicator.className = 'h-3 w-3 rounded-full bg-green-500 mr-2 animate-pulse';
+            statusText.textContent = 'Speech recognition: Listening';
+        } else {
+            testSpeechBtn.innerHTML = '<i class="fas fa-microphone mr-2"></i> Start Speaking';
+            testSpeechBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+            testSpeechBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            
+            statusIndicator.className = 'h-3 w-3 rounded-full bg-red-500 mr-2';
+            statusText.textContent = 'Speech recognition: Off';
+        }
+    }
+});
+</script>
+{% endblock %}

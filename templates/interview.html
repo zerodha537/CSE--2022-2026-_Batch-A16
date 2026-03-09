@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Interview Session{% endblock %}
+
+{% block head %}
+<style>
+    .timer {
+        font-family: 'Courier New', monospace;
+    }
+    .progress-ring {
+        transform: rotate(-90deg);
+    }
+    .progress-ring-circle {
+        transition: stroke-dashoffset 0.3s;
+        transform: rotate(90deg);
+        transform-origin: 50% 50%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl p-6 mb-6 shadow-lg">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-bold">
+                    <i class="fas fa-microphone-alt mr-2"></i> Live Interview Session
+                </h2>
+                <p class="opacity-90">Domain: {{ session.domain }} | Level: {{ session.experience_level }}</p>
+            </div>
+            <div class="text-right">
+                <div id="question-counter" class="text-xl font-bold">
+                    Question 1 of {{ questions|length }}
+                </div>
+                <div class="text-sm">Session ID: {{ session_id }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column: Camera & Controls -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Camera Feed -->
+            <div class="bg-white rounded-xl shadow-lg p-4">
+                <h3 class="text-lg font-bold mb-4 flex items-center">
+                    <i class="fas fa-video mr-2 text-blue-600"></i> Camera Preview
+                </h3>
+                <div id="camera-container" class="relative bg-black rounded-lg overflow-hidden" style="height: 240px;">
+                    <video id="camera-feed" autoplay playsinline class="w-full h-full object-cover"></video>
+                    <div id="camera-off" class="absolute inset-0 flex items-center justify-center bg-gray-900 text-white">
+                        <i class="fas fa-video-slash text-4xl"></i>
+                        <p class="mt-2">Camera is off</p>
+                    </div>
+                </div>
+                <div class="flex justify-center space-x-4 mt-4">
+                    <button id="toggle-camera" 
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-video mr-1"></i> Toggle Camera
+                    </button>
+                    <button id="toggle-mic" 
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        <i class="fas fa-microphone mr-1"></i> Toggle Mic
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Speech Controls -->
+            <div class="bg-white rounded-xl shadow-lg p-4">
+                <h3 class="text-lg font-bold mb-4 flex items-center">
+                    <i class="fas fa-comment-dots mr-2 text-green-600"></i> Speech Recognition
+                </h3>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span>Speech Recognition:</span>
+                        <div id="speech-status" class="flex items-center">
+                            <span class="h-3 w-3 rounded-full bg-red-500 mr-2"></span>
+                            <span class="text-sm">Off</span>
+                        </div>
+                    </div>
+                    <button id="toggle-speech" 
+                            class="w-full py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg font-semibold hover:opacity-90">
+                        <i class="fas fa-microphone mr-2"></i> Start Speaking
+                    </button>
+                    <div class="text-sm text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i> Click to start/stop speech recognition
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Timer -->
+            <div class="bg-white rounded-xl shadow-lg p-4">
+                <h3 class="text-lg font-bold mb-4 flex items-center">
+                    <i class="fas fa-clock mr-2 text-purple-600"></i> Timer
+                </h3>
+                <div class="text-center">
+                    <div class="relative inline-block">
+                        <svg width="120" height="120" class="progress-ring">
+                            <circle class="text-gray-200" stroke-width="8" stroke="currentColor" 
+                                    fill="transparent" r="52" cx="60" cy="60"/>
+                            <circle id="progress-circle" class="progress-ring-circle text-blue-600" 
+                                    stroke-width="8" stroke="currentColor" fill="transparent" 
+                                    r="52" cx="60" cy="60" stroke-dasharray="326.56" 
+                                    stroke-dashoffset="326.56"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div id="timer-display" class="text-2xl font-bold timer">02:00</div>
+                        </div>
+                    </div>
+                    <div class="mt-4 space-x-2">
+                        <button id="start-timer" 
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            Start Timer
+                        </button>
+                        <button id="stop-timer" 
+                                class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                            Stop
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Middle Column: Question & Answer -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Current Question -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-question-circle mr-2 text-blue-600"></i> Current Question
+                    </h3>
+                    <div id="question-tags" class="flex space-x-2">
+                        <span id="question-type" class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                            Behavioral
+                        </span>
+                        <span id="question-difficulty" class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                            Medium
+                        </span>
+                    </div>
+                </div>
+                
+                <div id="question-text" class="text-lg p-4 bg-gray-50 rounded-lg mb-6 min-h-[100px]">
+                    Loading question...
+                </div>
+                
+                <!-- Answer Area -->
+                <div class="mb-6">
+                    <label class="block text-lg font-semibold mb-3">
+                        <i class="fas fa-pen mr-2 text-green-600"></i> Your Answer
+                    </label>
+                    <div id="transcript-display" class="mb-3 p-4 bg-gray-50 rounded-lg min-h-[80px] border border-gray-200">
+                        <p class="text-gray-500 italic">Speech transcript will appear here...</p>
+                    </div>
+                    <textarea id="answer-text" rows="5" 
+                              class="w-full p-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="Type or speak your answer here..."></textarea>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex flex-wrap gap-4">
+                    <button id="submit-answer"
+                            class="px-6 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg font-semibold hover:opacity-90 flex items-center">
+                        <i class="fas fa-paper-plane mr-2"></i> Submit Answer
+                    </button>
+
+                  
+
+                    <button id="finish-interview"
+                            class="px-6 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600">
+                        Finish Interview
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Feedback Area (Initially Hidden) -->
+            <div id="feedback-area" class="bg-white rounded-xl shadow-lg p-6 hidden">
+                <h3 class="text-xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-chart-bar mr-2 text-purple-600"></i> AI Feedback
+                </h3>
+                <div id="feedback-content" class="space-y-4">
+                    <!-- Feedback will be loaded here -->
+                </div>
+                <div class="mt-6 text-center">
+                    <button id="next-question-btn" 
+                            class="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:opacity-90">
+                        Next Question <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden Data -->
+<input type="hidden" id="session-id" value="{{ session_id }}">
+<input type="hidden" id="current-question-id" value="">
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/camera.js') }}"></script>
+<script src="{{ url_for('static', filename='js/speech.js') }}"></script>
+<script src="{{ url_for('static', filename='js/interview.js') }}"></script>
+{% endblock %}

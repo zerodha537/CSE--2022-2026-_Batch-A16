@@ -1,0 +1,116 @@
+/* Custom styles for AI Interview Coach */
+
+/* Smooth transitions */
+.transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Code editor styling */
+.code-editor {
+    font-family: 'Courier New', monospace;
+    line-height: 1.5;
+    tab-size: 4;
+    resize: vertical;
+}
+
+.code-editor:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Progress ring animation */
+@keyframes progress-ring {
+    from {
+        stroke-dashoffset: 326.56;
+    }
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.progress-ring-circle {
+    animation: progress-ring 2s ease-in-out;
+}
+
+/* Pulse animation for listening indicator */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Gradient text */
+.gradient-text {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Card hover effects */
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Custom focus styles */
+.focus-ring:focus {
+    outline: none;
+    ring-width: 3px;
+    ring-color: rgba(59, 130, 246, 0.5);
+    ring-offset-width: 2px;
+}
+
+/* Print styles for reports */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    body {
+        margin: 0;
+        padding: 20px;
+        color: #000;
+        background: #fff;
+    }
+    
+    .shadow-lg, .shadow-md {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+    
+    .bg-gradient-to-r {
+        background: #666 !important;
+        color: #fff !important;
+        -webkit-print-color-adjust: exact;
+    }
+}
